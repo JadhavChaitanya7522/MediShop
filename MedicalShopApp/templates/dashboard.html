@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - MediShop{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2 class="page-title"><i class="fas fa-chart-line me-2"></i>Dashboard</h2>
+            <p class="text-muted">Welcome to MediShop Management System</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('add_medicine') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Medicine
+            </a>
+            <a href="{{ url_for('add_sale') }}" class="btn btn-success">
+                <i class="fas fa-shopping-cart me-2"></i>New Sale
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="stat-card stat-medicines">
+                <div class="stat-icon">
+                    <i class="fas fa-pills"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Total Medicines</span>
+                    <h3 class="stat-value">{{ total_medicines }}</h3>
+                </div>
+                <a href="{{ url_for('medicine_list') }}" class="stat-link">
+                    View All <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-xl-3">
+            <div class="stat-card stat-sales">
+                <div class="stat-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Total Sales</span>
+                    <h3 class="stat-value">{{ total_sales }}</h3>
+                </div>
+                <a href="{{ url_for('sales_list') }}" class="stat-link">
+                    View All <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-xl-3">
+            <div class="stat-card stat-revenue">
+                <div class="stat-icon">
+                    <i class="fas fa-rupee-sign"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Total Revenue</span>
+                    <h3 class="stat-value">₹{{ "%.2f"|format(total_revenue) }}</h3>
+                </div>
+                <span class="stat-link">
+                    <i class="fas fa-calendar-day me-1"></i> All Time
+                </span>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-xl-3">
+            <div class="stat-card stat-alert {% if low_stock_count > 0 %}has-alert{% endif %}">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Low Stock</span>
+                    <h3 class="stat-value">{{ low_stock_count }}</h3>
+                </div>
+                <a href="{{ url_for('medicine_list') }}" class="stat-link">
+                    {% if low_stock_count > 0 %}Action Required{% else %}All Good{% endif %}
+                    <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <!-- Sales Chart -->
+        <div class="col-lg-8">
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Sales Overview</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="salesChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stock Chart -->
+        <div class="col-lg-4">
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>Stock Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="stockChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Row -->
+    <div class="row g-4">
+        <!-- Low Stock Alert -->
+        <div class="col-lg-6">
+            <div class="card table-card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alerts
+                        <span class="badge bg-white text-danger ms-2">{{ low_stock_count }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if low_stock %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Medicine</th>
+                                        <th>Company</th>
+                                        <th>Qty</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for medicine in low_stock %}
+                                    <tr>
+                                        <td><strong>{{ medicine.medicine_name }}</strong></td>
+                                        <td>{{ medicine.company }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'danger' if medicine.quantity < 5 else 'warning' }}">
+                                                {{ medicine.quantity }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if medicine.quantity < 5 %}
+                                                <span class="badge bg-danger">Critical</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Low</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                            <h6 class="text-success">All medicines well stocked!</h6>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Sales -->
+        <div class="col-lg-6">
+            <div class="card table-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Sales
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_sales %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Medicine</th>
+                                        <th>Qty</th>
+                                        <th>Total</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sale in recent_sales %}
+                                    <tr>
+                                        <td><strong>{{ sale.medicine_name }}</strong></td>
+                                        <td>{{ sale.quantity_sold }}</td>
+                                        <td class="text-success fw-bold">₹{{ "%.2f"|format(sale.total_price) }}</td>
+                                        <td>{{ sale.sale_date[:10] }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="card-footer text-center">
+                            <a href="{{ url_for('sales_list') }}" class="btn btn-outline-primary btn-sm">
+                                View All Sales <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-shopping-basket fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">No sales recorded yet!</h6>
+                            <a href="{{ url_for('add_sale') }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i>Record First Sale
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Sales Chart
+    const salesCtx = document.getElementById('salesChart').getContext('2d');
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const textColor = isDark ? '#fff' : '#333';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    
+    window.salesChart = new Chart(salesCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+                label: 'Monthly Sales (₹)',
+                data: [12000, 19000, 15000, 25000, 22000, 30000, 28000, 35000, 40000, 38000, 45000, 50000],
+                backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                borderColor: 'rgb(99, 102, 241)',
+                borderWidth: 2,
+                borderRadius: 8,
+                hoverBackgroundColor: 'rgb(99, 102, 241)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: textColor },
+                    grid: { color: gridColor }
+                },
+                y: {
+                    ticks: { 
+                        color: textColor,
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    },
+                    grid: { color: gridColor }
+                }
+            }
+        }
+    });
+    
+    // Stock Chart (Doughnut)
+    const stockCtx = document.getElementById('stockChart').getContext('2d');
+    const totalMedicines = parseInt("{{ total_medicines }}");
+    const lowStockCount = parseInt("{{ low_stock_count }}");
+    const inStock = totalMedicines - lowStockCount;
+    
+    window.stockChart = new Chart(stockCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['In Stock', 'Low Stock', 'Critical'],
+            datasets: [{
+                data: [inStock, lowStockCount, 0],
+                backgroundColor: [
+                    'rgba(34, 197, 94, 0.8)',
+                    'rgba(234, 179, 8, 0.8)',
+                    'rgba(239, 68, 68, 0.8)'
+                ],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor,
+                        padding: 15
+                    }
+                }
+            },
+            cutout: '60%'
+        }
+    });
+</script>
+{% endblock %}
+

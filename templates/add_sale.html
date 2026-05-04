@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}New Sale - Medical Shop Management{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Page Header -->
+            <div class="row mt-4 mb-4">
+                <div class="col-12">
+                    <h2 class="page-title">
+                        <i class="fas fa-shopping-cart me-2 text-success"></i>New Sale
+                    </h2>
+                    <p class="text-muted">Record a new sale transaction with multiple medicines</p>
+                </div>
+            </div>
+
+            <!-- Sale Form Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('add_sale') }}" id="saleForm">
+                        
+                        <!-- Medicines Table -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-pills me-1 text-primary"></i> Medicines *
+                            </label>
+                            
+                            {% if not medicines %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No medicines available in stock! 
+                                <a href="{{ url_for('add_medicine') }}" class="alert-link">Add medicines first.</a>
+                            </div>
+                            {% else %}
+                            
+                            <!-- Table Header -->
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="medicinesTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 45%;">Medicine</th>
+                                            <th style="width: 20%;">Available</th>
+                                            <th style="width: 20%;">Quantity</th>
+                                            <th style="width: 15%;">Line Total</th>
+                                            <th style="width: 5%;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="medicineRows">
+                                        <!-- Initial row -->
+                                        <tr class="medicine-row" data-row="0">
+                                            <td>
+                                                <select class="form-select medicine-select" name="medicine_id[]" required>
+                                                    <option value="">-- Select Medicine --</option>
+                                                    {% for medicine in medicines %}
+                                                    <option value="{{ medicine.id }}" 
+                                                            data-price="{{ medicine.price }}" 
+                                                            data-quantity="{{ medicine.quantity }}"
+                                                            data-name="{{ medicine.medicine_name }}">
+                                                        {{ medicine.medicine_name }} - {{ medicine.company }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td class="available-stock text-muted">
+                                                <span class="stock-value">-</span>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control quantity-input" 
+                                                       name="quantity_sold[]" min="1" value="1" disabled>
+                                            </td>
+                                            <td class="line-total fw-bold text-success">
+                                                ₹0.00
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-danger btn-sm remove-row-btn" 
+                                                        disabled title="Remove">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Add Medicine Button -->
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="addMedicineBtn">
+                                <i class="fas fa-plus me-1"></i> Add Another Medicine
+                            </button>
+                            
+                            {% endif %}
+                        </div>
+
+                        <!-- Total Price Display -->
+                        <div class="card bg-gradient-success text-white mb-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-calculator me-2"></i>Total Amount
+                                        </h5>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <h2 class="mb-0" id="totalPrice">₹0.00</h2>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items Count -->
+                        <div class="mb-4">
+                            <span class="badge bg-primary fs-6" id="itemsCount">0 items</span>
+                        </div>
+
+                        <!-- Stock Warning -->
+                        <div id="stockWarning" class="alert alert-danger d-none">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="stockWarningText"></span>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success btn-lg px-5" id="submitBtn" disabled>
+                                <i class="fas fa-check-circle me-2"></i>Complete Sale
+                            </button>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg px-5">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-link me-2"></i>Quick Links
+                    </h6>
+                    <a href="{{ url_for('sales_list') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list me-1"></i>View All Sales
+                    </a>
+                    <a href="{{ url_for('medicine_list') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-pills me-1"></i>Manage Medicines
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Store medicines data as a global variable
+    var medicinesData = {{ medicines|tojson }};
+    
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing sale form...');
+        
+        var medicineRows = document.getElementById('medicineRows');
+        var addMedicineBtn = document.getElementById('addMedicineBtn');
+        var totalPriceDisplay = document.getElementById('totalPrice');
+        var itemsCountDisplay = document.getElementById('itemsCount');
+        var stockWarning = document.getElementById('stockWarning');
+        var stockWarningText = document.getElementById('stockWarningText');
+        var submitBtn = document.getElementById('submitBtn');
+        
+        var rowCount = 1;
+        
+        // Function to calculate grand total for all rows
+        function calculateGrandTotal() {
+            var total = 0;
+            var items = 0;
+            var rows = document.querySelectorAll('.medicine-row');
+            
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var select = row.querySelector('.medicine-select');
+                var quantityInput = row.querySelector('.quantity-input');
+                var lineTotalCell = row.querySelector('.line-total');
+                
+                if (select && select.value && quantityInput && quantityInput.value > 0) {
+                    var option = select.options[select.selectedIndex];
+                    if (option && option.dataset.price) {
+                        var price = parseFloat(option.dataset.price) || 0;
+                        var quantity = parseInt(quantityInput.value) || 0;
+                        var lineTotal = price * quantity;
+                        
+                        total += lineTotal;
+                        items += quantity;
+                        
+                        // Update line total display
+                        lineTotalCell.textContent = '₹' + lineTotal.toFixed(2);
+                    }
+                }
+            }
+            
+            // Update grand total display
+            totalPriceDisplay.textContent = '₹' + total.toFixed(2);
+            itemsCountDisplay.textContent = items + ' item' + (items !== 1 ? 's' : '');
+            
+            // Enable/disable submit button based on valid items
+            var hasValidItems = false;
+            var allRows = document.querySelectorAll('.medicine-row');
+            for (var j = 0; j < allRows.length; j++) {
+                var r = allRows[j];
+                var sel = r.querySelector('.medicine-select');
+                if (sel && sel.value) {
+                    hasValidItems = true;
+                    break;
+                }
+            }
+            
+            var hasStockWarning = stockWarning.classList.contains('show');
+            submitBtn.disabled = !hasValidItems || hasStockWarning;
+        }
+        
+        // Function to check stock for all rows
+        function checkAllStock() {
+            var rows = document.querySelectorAll('.medicine-row');
+            var hasStockIssue = false;
+            var warningMessages = [];
+            
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var select = row.querySelector('.medicine-select');
+                var quantityInput = row.querySelector('.quantity-input');
+                
+                if (select && select.value && quantityInput) {
+                    var option = select.options[select.selectedIndex];
+                    if (option && option.dataset.quantity) {
+                        var available = parseInt(option.dataset.quantity) || 0;
+                        var quantity = parseInt(quantityInput.value) || 0;
+                        
+                        if (quantity > available) {
+                            hasStockIssue = true;
+                            warningMessages.push(option.dataset.name + ': only ' + available + ' available');
+                        }
+                    }
+                }
+            }
+            
+            if (hasStockIssue) {
+                stockWarning.classList.remove('d-none');
+                stockWarning.classList.add('show');
+                stockWarningText.textContent = warningMessages.join('; ');
+                submitBtn.disabled = true;
+            } else {
+                stockWarning.classList.add('d-none');
+                stockWarning.classList.remove('show');
+                calculateGrandTotal();
+            }
+        }
+        
+        // Function to attach event listeners to a row
+        function attachRowEvents(row) {
+            var select = row.querySelector('.medicine-select');
+            var quantityInput = row.querySelector('.quantity-input');
+            var availableCell = row.querySelector('.stock-value');
+            var lineTotalCell = row.querySelector('.line-total');
+            var removeBtn = row.querySelector('.remove-row-btn');
+            
+            // Medicine select change event
+            select.addEventListener('change', function() {
+                var option = this.options[this.selectedIndex];
+                
+                if (this.value) {
+                    var available = parseInt(option.dataset.quantity) || 0;
+                    var price = parseFloat(option.dataset.price) || 0;
+                    
+                    availableCell.textContent = available + ' units';
+                    quantityInput.disabled = false;
+                    quantityInput.max = available;
+                    quantityInput.value = 1;
+                    lineTotalCell.textContent = '₹' + price.toFixed(2);
+                    
+                    // Enable remove button
+                    removeBtn.disabled = false;
+                } else {
+                    availableCell.textContent = '-';
+                    quantityInput.disabled = true;
+                    quantityInput.value = 1;
+                    lineTotalCell.textContent = '₹0.00';
+                    removeBtn.disabled = true;
+                }
+                
+                checkAllStock();
+            });
+            
+            // Quantity input event
+            quantityInput.addEventListener('input', function() {
+                checkAllStock();
+            });
+            
+            // Quantity change event
+            quantityInput.addEventListener('change', function() {
+                checkAllStock();
+            });
+            
+            // Remove button click
+            removeBtn.addEventListener('click', function() {
+                var rows = document.querySelectorAll('.medicine-row');
+                if (rows.length > 1) {
+                    row.remove();
+                    calculateGrandTotal();
+                }
+            });
+        }
+        
+        // Initialize first row
+        var firstRow = document.querySelector('.medicine-row');
+        if (firstRow) {
+            attachRowEvents(firstRow);
+        }
+        
+        // Add medicine button click
+        addMedicineBtn.addEventListener('click', function() {
+            console.log('Adding new medicine row...');
+            
+            var tbody = document.getElementById('medicineRows');
+            var newRow = document.createElement('tr');
+            newRow.className = 'medicine-row';
+            newRow.setAttribute('data-row', rowCount);
+            
+            // Build options for select
+            var optionsHtml = '<option value="">-- Select Medicine --</option>';
+            for (var i = 0; i < medicinesData.length; i++) {
+                var med = medicinesData[i];
+                optionsHtml = optionsHtml + '<option value="' + med.id + '" data-price="' + med.price + '" data-quantity="' + med.quantity + '" data-name="' + med.medicine_name + '">' + med.medicine_name + ' - ' + med.company + '</option>';
+            }
+            
+            var rowHtml = '<td>';
+            rowHtml = rowHtml + '<select class="form-select medicine-select" name="medicine_id[]" required>';
+            rowHtml = rowHtml + optionsHtml;
+            rowHtml = rowHtml + '</select>';
+            rowHtml = rowHtml + '</td>';
+            rowHtml = rowHtml + '<td class="available-stock text-muted">';
+            rowHtml = rowHtml + '<span class="stock-value">-</span>';
+            rowHtml = rowHtml + '</td>';
+            rowHtml = rowHtml + '<td>';
+            rowHtml = rowHtml + '<input type="number" class="form-control quantity-input" name="quantity_sold[]" min="1" value="1" disabled>';
+            rowHtml = rowHtml + '</td>';
+            rowHtml = rowHtml + '<td class="line-total fw-bold text-success">₹0.00</td>';
+            rowHtml = rowHtml + '<td>';
+            rowHtml = rowHtml + '<button type="button" class="btn btn-danger btn-sm remove-row-btn" title="Remove"><i class="fas fa-times"></i></button>';
+            rowHtml = rowHtml + '</td>';
+            
+            newRow.innerHTML = rowHtml;
+            
+            tbody.appendChild(newRow);
+            attachRowEvents(newRow);
+            
+            rowCount++;
+            calculateGrandTotal();
+            
+            console.log('New row added. Total rows:', document.querySelectorAll('.medicine-row').length);
+        });
+        
+        // Initial calculation
+        calculateGrandTotal();
+        
+        console.log('Sale form initialized successfully');
+    });
+</script>
+{% endblock %}
+

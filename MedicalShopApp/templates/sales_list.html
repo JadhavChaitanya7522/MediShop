@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Sales Report - Medical Shop Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mt-4 mb-4">
+        <div class="col-md-6">
+            <h2 class="page-title">
+                <i class="fas fa-file-invoice-dollar me-2 text-success"></i>Sales Report
+            </h2>
+            <p class="text-muted">View and manage all sales transactions</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{{ url_for('add_sale') }}" class="btn btn-success">
+                <i class="fas fa-plus-circle me-2"></i>New Sale
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50 mb-2">Total Transactions</h6>
+                            <h2 class="mb-0">{{ sales|length }}</h2>
+                        </div>
+                        <i class="fas fa-shopping-cart fa-3x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50 mb-2">Total Revenue</h6>
+<h2 class="mb-0">₹{{ "%.2f"|format(sales|sum(attribute='total_price')|float) }}</h2>
+                        </div>
+                        <i class="fas fa-dollar-sign fa-3x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50 mb-2">Total Units Sold</h6>
+                            <h2 class="mb-0">{{ sales|sum(attribute='quantity_sold') }}</h2>
+                        </div>
+                        <i class="fas fa-boxes fa-3x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2 text-primary"></i>All Sales Transactions
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if sales %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-success">
+                            <tr>
+                                <th><i class="fas fa-hashtag me-1"></i>ID</th>
+                                <th><i class="fas fa-pills me-1"></i>Medicine Name</th>
+                                <th><i class="fas fa-boxes me-1"></i>Quantity</th>
+                                <th><i class="fas fa-dollar-sign me-1"></i>Unit Price</th>
+                                <th><i class="fas fa-calculator me-1"></i>Total Price</th>
+                                <th><i class="fas fa-calendar me-1"></i>Sale Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in sales %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">#{{ sale.id }}</span>
+                                </td>
+                                <td>
+                                    <strong class="text-primary">{{ sale.medicine_name }}</strong>
+                                </td>
+<td>
+                                    <span class="badge bg-info">{{ sale.quantity_sold }}</span>
+                                </td>
+                                <td>
+                                    ₹{{ "%.2f"|format(sale.total_price / sale.quantity_sold) }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-success fs-6">
+                                        ₹{{ "%.2f"|format(sale.total_price) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <i class="fas fa-clock text-muted me-1"></i>
+                                    {{ sale.sale_date }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="3" class="text-end">Total:</th>
+                                <th><span class="badge bg-info">{{ sales|sum(attribute='quantity_sold') }}</span></th>
+<th><span class="badge bg-success">₹{{ "%.2f"|format(sales|sum(attribute='total_price')|float) }}</span></th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-shopping-basket fa-5x text-muted mb-4"></i>
+                    <h4 class="text-muted">No Sales Recorded</h4>
+                    <p class="text-muted">Start recording sales to see them here.</p>
+                    <a href="{{ url_for('add_sale') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Record First Sale
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Monthly Summary (if sales exist) -->
+    {% if sales %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2 text-warning"></i>Sales Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-primary">{{ sales|length }}</h4>
+                                <p class="text-muted mb-0">Total Transactions</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+<h4 class="text-success">₹{{ "%.2f"|format(sales|sum(attribute='total_price')|float) }}</h4>
+                                <p class="text-muted mb-0">Total Revenue</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-info">{{ sales|sum(attribute='quantity_sold') }}</h4>
+                                <p class="text-muted mb-0">Units Sold</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

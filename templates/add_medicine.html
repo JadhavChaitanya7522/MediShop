@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Add Medicine - Medical Shop Management{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Page Header -->
+            <div class="row mt-4 mb-4">
+                <div class="col-12">
+                    <h2 class="page-title">
+                        <i class="fas fa-plus-circle me-2 text-success"></i>Add New Medicine
+                    </h2>
+                    <p class="text-muted">Enter medicine details to add to inventory</p>
+                </div>
+            </div>
+
+            <!-- Medicine Form Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('add_medicine') }}">
+                        <div class="row g-3">
+                            <!-- Medicine Name -->
+                            <div class="col-md-6">
+                                <label for="medicine_name" class="form-label">
+                                    <i class="fas fa-pills me-1 text-primary"></i> Medicine Name *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-capsules text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="medicine_name" 
+                                           name="medicine_name" placeholder="Enter medicine name"
+                                           required>
+                                </div>
+                            </div>
+
+                            <!-- Company -->
+                            <div class="col-md-6">
+                                <label for="company" class="form-label">
+                                    <i class="fas fa-industry me-1 text-primary"></i> Company *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-building text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="company" 
+                                           name="company" placeholder="Enter company name"
+                                           required>
+                                </div>
+                            </div>
+
+                            <!-- Price -->
+                            <div class="col-md-6">
+                                <label for="price" class="form-label">
+                                    <i class="fas fa-dollar-sign me-1 text-primary"></i> Price (per unit) *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-money-bill text-muted"></i>
+                                    </span>
+                                    <input type="number" class="form-control" id="price" 
+                                           name="price" step="0.01" min="0" 
+                                           placeholder="0.00" required>
+                                </div>
+                            </div>
+
+                            <!-- Quantity -->
+                            <div class="col-md-6">
+                                <label for="quantity" class="form-label">
+                                    <i class="fas fa-boxes me-1 text-primary"></i> Quantity *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-box text-muted"></i>
+                                    </span>
+                                    <input type="number" class="form-control" id="quantity" 
+                                           name="quantity" min="0" 
+                                           placeholder="0" required>
+                                </div>
+                            </div>
+
+                            <!-- Expiry Date -->
+                            <div class="col-md-6">
+                                <label for="expiry_date" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1 text-primary"></i> Expiry Date *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-calendar text-muted"></i>
+                                    </span>
+                                    <input type="date" class="form-control" id="expiry_date" 
+                                           name="expiry_date" required>
+                                </div>
+                            </div>
+
+                            <!-- Info Box -->
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Note:</strong> Medicine will be added to inventory immediately. 
+                                    Low stock alerts will appear when quantity falls below 10 units.
+                                </div>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="col-12 mt-4">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success btn-lg px-5">
+                                        <i class="fas fa-save me-2"></i>Add Medicine
+                                    </button>
+                                    <a href="{{ url_for('medicine_list') }}" class="btn btn-secondary btn-lg px-5">
+                                        <i class="fas fa-times me-2"></i>Cancel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-link me-2"></i>Quick Links
+                    </h6>
+                    <a href="{{ url_for('medicine_list') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list me-1"></i>View All Medicines
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-home me-1"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set minimum date to today for expiry date
+    document.addEventListener('DOMContentLoaded', function() {
+        const expiryDate = document.getElementById('expiry_date');
+        const today = new Date().toISOString().split('T')[0];
+        expiryDate.setAttribute('min', today);
+        expiryDate.value = today;
+    });
+</script>
+{% endblock %}
+
